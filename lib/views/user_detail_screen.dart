@@ -83,7 +83,7 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
       userId: '',
       lastPayment: now,
       status: 'active',
-      remainingDays: 30,
+      remainingDays: 0, // Will be calculated based on lastDate
       lastDate: now,
       qrCode: newQr,
       barcode: newBarcode,
@@ -94,7 +94,7 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
     _userIdController.text = '';
     _statusController.text = 'active';
     _lastPaymentController.text = DateFormat('yyyy-MM-dd').format(now);
-    _remainingDaysController.text = '30';
+    _remainingDaysController.text = '0'; // Start with 0, will update when lastDate changes
     _lastDateController.text = DateFormat('yyyy-MM-dd').format(now);
 
     setState(() {
@@ -115,10 +115,14 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
           _lastPaymentController.text = DateFormat(
             'yyyy-MM-dd',
           ).format(user.lastPayment);
-          _remainingDaysController.text = user.remainingDays.toString();
           _lastDateController.text = DateFormat(
             'yyyy-MM-dd',
           ).format(user.lastDate);
+          
+          // Calculate remaining days based on current date vs last date
+          final now = DateTime.now();
+          final difference = user.lastDate.difference(now).inDays;
+          _remainingDaysController.text = difference > 0 ? difference.toString() : '0';
         }
         _isLoading = false;
       });
@@ -128,15 +132,31 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
   Future<void> _saveUser() async {
     if (_user == null) return;
 
+    // Check if lastDate has changed
+    final newLastDate = DateTime.tryParse(_lastDateController.text) ?? _user!.lastDate;
+    final lastDateChanged = newLastDate != _user!.lastDate;
+    
+    // Generate new QR code if lastDate changed
+    String newQrCode = _user!.qrCode;
+    if (lastDateChanged) {
+      newQrCode = QRService.generateUniqueQRCode();
+    }
+
+    // Calculate remaining days based on current date vs last date
+    final now = DateTime.now();
+    final calculatedRemainingDays = newLastDate.difference(now).inDays > 0 
+        ? newLastDate.difference(now).inDays 
+        : 0;
+
     final updatedUser = _user!.copyWith(
       userName: _userNameController.text,
       userId: _userIdController.text,
       status: _statusController.text,
       lastPayment:
           DateTime.tryParse(_lastPaymentController.text) ?? _user!.lastPayment,
-      remainingDays:
-          int.tryParse(_remainingDaysController.text) ?? _user!.remainingDays,
-      lastDate: DateTime.tryParse(_lastDateController.text) ?? _user!.lastDate,
+      remainingDays: calculatedRemainingDays,
+      lastDate: newLastDate,
+      qrCode: newQrCode,
     );
 
     try {
@@ -160,9 +180,7 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
             ),
           ),
         );
-        if (_isNewUser) {
-          context.go('/user/${updatedUser.id}');
-        }
+        context.go('/dashboard');
       }
     } catch (e) {
       if (mounted) {
@@ -230,7 +248,7 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
               ),
             ),
           );
-          context.pop();
+          context.go('/dashboard');
         }
       } catch (e) {
         if (mounted) {
@@ -317,24 +335,10 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: _CodeCard(
-                      title: 'QR Code',
-                      qrCode: _user!.qrCode,
-                      barcode: null,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _CodeCard(
-                      title: 'Barcode',
-                      qrCode: null,
-                      barcode: _user!.barcode,
-                    ),
-                  ),
-                ],
+              _CodeCard(
+                title: 'QR Code',
+                qrCode: _user!.qrCode,
+                barcode: null,
               ),
               const SizedBox(height: 10),
               Expanded(
@@ -438,19 +442,6 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
                               ),
                               const SizedBox(height: 16),
                               TextField(
-                                controller: _remainingDaysController,
-                                keyboardType: TextInputType.number,
-                                style: const TextStyle(color: Colors.white),
-                                decoration: const InputDecoration(
-                                  labelText: 'Remaining Days',
-                                  prefixIcon: Icon(
-                                    Icons.schedule_rounded,
-                                    color: Color(0xFF6C63FF),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              TextField(
                                 controller: _lastDateController,
                                 keyboardType: TextInputType.datetime,
                                 style: const TextStyle(color: Colors.white),
@@ -458,6 +449,29 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
                                   labelText: 'Last Date (YYYY-MM-DD)',
                                   prefixIcon: Icon(
                                     Icons.calendar_today_rounded,
+                                    color: Color(0xFF6C63FF),
+                                  ),
+                                ),
+                                onChanged: (value) {
+                                  // When last date changes, calculate remaining days automatically
+                                  final selectedDate = DateTime.tryParse(value);
+                                  if (selectedDate != null) {
+                                    final now = DateTime.now();
+                                    final difference = selectedDate.difference(now).inDays;
+                                    _remainingDaysController.text = difference > 0 ? difference.toString() : '0';
+                                  }
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              TextField(
+                                controller: _remainingDaysController,
+                                keyboardType: TextInputType.number,
+                                readOnly: true,
+                                style: const TextStyle(color: Colors.white70),
+                                decoration: const InputDecoration(
+                                  labelText: 'Remaining Days (Auto-calculated)',
+                                  prefixIcon: Icon(
+                                    Icons.schedule_rounded,
                                     color: Color(0xFF6C63FF),
                                   ),
                                 ),
@@ -490,7 +504,7 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
                                   const SizedBox(width: 16),
                                   Expanded(
                                     child: ElevatedButton(
-                                      onPressed: () => context.pop(),
+                                      onPressed: () => context.go('/dashboard'),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.white
                                             .withOpacity(0.1),

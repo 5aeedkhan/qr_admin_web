@@ -268,10 +268,10 @@ class _UserCard extends StatelessWidget {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '${user.remainingDays} days left',
+                                '${user.lastDate.difference(DateTime.now()).inDays > 0 ? user.lastDate.difference(DateTime.now()).inDays : 0} days left',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: user.remainingDays > 7
+                                  color: user.lastDate.difference(DateTime.now()).inDays > 7
                                       ? const Color(0xFF00FF88)
                                       : const Color(0xFFFFA726),
                                   letterSpacing: 0.3,
