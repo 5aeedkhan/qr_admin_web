@@ -1,0 +1,1 @@
+ D:\\Flutter\ Projects\\qr_admin_web\\build\\c202dd7ae1048d04488954c0b17e570f\\dart_build_result.json:  C:\\flutter\\bin\\cache\\dart-sdk\\version D:\\Flutter\ Projects\\qr_admin_web\\.dart_tool\\package_config.json D:\\Flutter\ Projects\\qr_admin_web\\pubspec.yaml d:\\flutter\ projects\\qr_admin_web\\.dart_tool\\package_config.json
