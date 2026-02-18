@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../services/firebase_service.dart';
-import '../theme/app_theme.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -18,6 +17,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
+  bool _isAdminMode = true;
 
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
@@ -67,19 +67,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     });
 
     try {
-      final result = await FirebaseService.signInAdmin(
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
 
-      if (result != null && mounted) {
-        final isAdmin = await FirebaseService.isAdminUser(_emailController.text.trim());
-        if (isAdmin) {
-          context.go('/dashboard');
-        } else {
+      if (_isAdminMode) {
+        final result = await FirebaseService.signInAdmin(email, password);
+        if (result != null && mounted) {
+          final isAdmin = await FirebaseService.isAdminUser(email);
+          if (isAdmin) {
+            context.go('/dashboard');
+          } else {
+            await FirebaseService.signOut();
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text(
+                  'Access denied. Admin privileges required.',
+                ),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            );
+          }
+        } else if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Access denied. Admin privileges required.'),
+              content: const Text('Invalid email or password'),
               backgroundColor: Colors.red,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
@@ -88,17 +104,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             ),
           );
         }
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Invalid email or password'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+      } else {
+        final result = await FirebaseService.signInUser(email, password);
+        if (result != null && mounted) {
+          context.go('/me');
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Invalid email or password'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-          ),
-        );
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -130,11 +151,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0F0F1E),
-              Color(0xFF1A1A2E),
-              Color(0xFF2A2A3E),
-            ],
+            colors: [Color(0xFF0F0F1E), Color(0xFF1A1A2E), Color(0xFF2A2A3E)],
           ),
         ),
         child: Center(
@@ -177,12 +194,95 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           ),
                           const SizedBox(height: 24),
                           const Text(
-                            'Admin Login',
+                            'Login',
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                               letterSpacing: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.12),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _isAdminMode = true;
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 10,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        gradient: _isAdminMode
+                                            ? const LinearGradient(
+                                                colors: [
+                                                  Color(0xFF6C63FF),
+                                                  Color(0xFF5A52D5),
+                                                ],
+                                              )
+                                            : null,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Text(
+                                        'Admin',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _isAdminMode = false;
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 10,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        gradient: !_isAdminMode
+                                            ? const LinearGradient(
+                                                colors: [
+                                                  Color(0xFF00D4FF),
+                                                  Color(0xFF00A8CC),
+                                                ],
+                                              )
+                                            : null,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Text(
+                                        'User',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(height: 32),
@@ -192,7 +292,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             style: const TextStyle(color: Colors.white),
                             decoration: const InputDecoration(
                               labelText: 'Email',
-                              prefixIcon: Icon(Icons.email_rounded, color: Color(0xFF6C63FF)),
+                              prefixIcon: Icon(
+                                Icons.email_rounded,
+                                color: Color(0xFF6C63FF),
+                              ),
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -202,7 +305,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             style: const TextStyle(color: Colors.white),
                             decoration: InputDecoration(
                               labelText: 'Password',
-                              prefixIcon: const Icon(Icons.lock_rounded, color: Color(0xFF6C63FF)),
+                              prefixIcon: const Icon(
+                                Icons.lock_rounded,
+                                color: Color(0xFF6C63FF),
+                              ),
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _obscurePassword
@@ -237,7 +343,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                       height: 20,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
                                       ),
                                     )
                                   : const Text(

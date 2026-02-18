@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../models/user_model.dart';
 import '../services/firebase_service.dart';
-import '../theme/app_theme.dart';
 
 class UsersScreen extends ConsumerStatefulWidget {
   const UsersScreen({super.key});
@@ -41,7 +40,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
 
   Future<void> _loadUsers() async {
     final users = await FirebaseService.getAllUsers();
-    
+
     if (mounted) {
       setState(() {
         _users = users;
@@ -52,10 +51,15 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
 
   List<UserModel> get _filteredUsers {
     if (_searchQuery.isEmpty) return _users;
-    return _users.where((user) =>
-      user.userName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-      user.userId.toLowerCase().contains(_searchQuery.toLowerCase())
-    ).toList();
+    return _users
+        .where(
+          (user) =>
+              user.userName.toLowerCase().contains(
+                _searchQuery.toLowerCase(),
+              ) ||
+              user.userId.toLowerCase().contains(_searchQuery.toLowerCase()),
+        )
+        .toList();
   }
 
   @override
@@ -85,11 +89,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0F0F1E),
-              Color(0xFF1A1A2E),
-              Color(0xFF2A2A3E),
-            ],
+            colors: [Color(0xFF0F0F1E), Color(0xFF1A1A2E), Color(0xFF2A2A3E)],
           ),
         ),
         child: FadeTransition(
@@ -108,7 +108,10 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
                   decoration: InputDecoration(
                     hintText: 'Search users...',
                     hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-                    prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF6C63FF)),
+                    prefixIcon: const Icon(
+                      Icons.search_rounded,
+                      color: Color(0xFF6C63FF),
+                    ),
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.1),
                     border: OutlineInputBorder(
@@ -117,11 +120,17 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFF2A2A3E), width: 1),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF2A2A3E),
+                        width: 1,
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: const BorderSide(color: Color(0xFF6C63FF), width: 2),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF6C63FF),
+                        width: 2,
+                      ),
                     ),
                   ),
                 ),
@@ -135,38 +144,38 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
                         ),
                       )
                     : _filteredUsers.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.person_off_rounded,
-                                  size: 80,
-                                  color: Colors.white.withOpacity(0.5),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'No users found',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.white.withOpacity(0.7),
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ],
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.person_off_rounded,
+                              size: 80,
+                              color: Colors.white.withOpacity(0.5),
                             ),
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            itemCount: _filteredUsers.length,
-                            itemBuilder: (context, index) {
-                              final user = _filteredUsers[index];
-                              return _UserCard(
-                                user: user,
-                                onTap: () => context.push('/user/${user.id}'),
-                              );
-                            },
-                          ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No users found',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.white.withOpacity(0.7),
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        itemCount: _filteredUsers.length,
+                        itemBuilder: (context, index) {
+                          final user = _filteredUsers[index];
+                          return _UserCard(
+                            user: user,
+                            onTap: () => context.push('/user/${user.id}'),
+                          );
+                        },
+                      ),
               ),
             ],
           ),
@@ -185,15 +194,12 @@ class _UserCard extends StatelessWidget {
   final UserModel user;
   final VoidCallback onTap;
 
-  const _UserCard({
-    required this.user,
-    required this.onTap,
-  });
+  const _UserCard({required this.user, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final isActive = user.status == 'active';
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: ClipRRect(
@@ -271,7 +277,11 @@ class _UserCard extends StatelessWidget {
                                 '${user.lastDate.difference(DateTime.now()).inDays > 0 ? user.lastDate.difference(DateTime.now()).inDays : 0} days left',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: user.lastDate.difference(DateTime.now()).inDays > 7
+                                  color:
+                                      user.lastDate
+                                              .difference(DateTime.now())
+                                              .inDays >
+                                          7
                                       ? const Color(0xFF00FF88)
                                       : const Color(0xFFFFA726),
                                   letterSpacing: 0.3,

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../services/firebase_service.dart';
-import '../theme/app_theme.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -41,7 +40,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
 
   Future<void> _loadDashboardData() async {
     final users = await FirebaseService.getAllUsers();
-    
+
     if (mounted) {
       setState(() {
         _totalUsers = users.length;
@@ -86,11 +85,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0F0F1E),
-              Color(0xFF1A1A2E),
-              Color(0xFF2A2A3E),
-            ],
+            colors: [Color(0xFF0F0F1E), Color(0xFF1A1A2E), Color(0xFF2A2A3E)],
           ),
         ),
         child: _isLoading

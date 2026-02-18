@@ -4,6 +4,7 @@ import '../views/login_screen.dart';
 import '../views/dashboard_screen.dart';
 import '../views/users_screen.dart';
 import '../views/user_detail_screen.dart';
+import '../views/user_portal_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/login',
@@ -15,6 +16,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/dashboard',
       builder: (context, state) => const DashboardScreen(),
+    ),
+    GoRoute(
+      path: '/me',
+      builder: (context, state) => const UserPortalScreen(),
     ),
     GoRoute(
       path: '/users',

@@ -7,7 +7,6 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../models/user_model.dart';
 import '../services/firebase_service.dart';
 import '../services/qr_service.dart';
-import '../theme/app_theme.dart';
 
 class UserDetailScreen extends ConsumerStatefulWidget {
   final String userId;
@@ -32,6 +31,8 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
 
   final _userNameController = TextEditingController();
   final _userIdController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _statusController = TextEditingController();
   final _lastPaymentController = TextEditingController();
   final _remainingDaysController = TextEditingController();
@@ -73,14 +74,22 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
 
   void _initializeNewUser() {
     final now = DateTime.now();
-    final newId = QRService.generateUniqueQRCode();
-    final newQr = newId;
+    final newId = DateTime.now().millisecondsSinceEpoch.toString();
+    final newQr = QRService.buildUserQrPayload(
+      userId: '',
+      userName: '',
+      email: '',
+      lastDate: now,
+      createdAt: now,
+    );
     final newBarcode = QRService.generateUniqueBarcode();
 
     _user = UserModel(
       id: newId,
       userName: '',
       userId: '',
+      email: '',
+      authUid: '',
       lastPayment: now,
       status: 'active',
       remainingDays: 0, // Will be calculated based on lastDate
@@ -92,9 +101,12 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
 
     _userNameController.text = '';
     _userIdController.text = '';
+    _emailController.text = '';
+    _passwordController.text = '';
     _statusController.text = 'active';
     _lastPaymentController.text = DateFormat('yyyy-MM-dd').format(now);
-    _remainingDaysController.text = '0'; // Start with 0, will update when lastDate changes
+    _remainingDaysController.text =
+        '0'; // Start with 0, will update when lastDate changes
     _lastDateController.text = DateFormat('yyyy-MM-dd').format(now);
 
     setState(() {
@@ -111,6 +123,8 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
         if (user != null) {
           _userNameController.text = user.userName;
           _userIdController.text = user.userId;
+          _emailController.text = user.email;
+          _passwordController.text = '';
           _statusController.text = user.status;
           _lastPaymentController.text = DateFormat(
             'yyyy-MM-dd',
@@ -118,11 +132,13 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
           _lastDateController.text = DateFormat(
             'yyyy-MM-dd',
           ).format(user.lastDate);
-          
+
           // Calculate remaining days based on current date vs last date
           final now = DateTime.now();
           final difference = user.lastDate.difference(now).inDays;
-          _remainingDaysController.text = difference > 0 ? difference.toString() : '0';
+          _remainingDaysController.text = difference > 0
+              ? difference.toString()
+              : '0';
         }
         _isLoading = false;
       });
@@ -132,25 +148,60 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
   Future<void> _saveUser() async {
     if (_user == null) return;
 
+    if (_isNewUser) {
+      if (_emailController.text.trim().isEmpty ||
+          _passwordController.text.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'Email and password are required for new users',
+              ),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+        return;
+      }
+      print('🔐 DEBUG: Creating new user with email: ${_emailController.text.trim()}');
+    }
+
     // Check if lastDate has changed
-    final newLastDate = DateTime.tryParse(_lastDateController.text) ?? _user!.lastDate;
+    final newLastDate =
+        DateTime.tryParse(_lastDateController.text) ?? _user!.lastDate;
     final lastDateChanged = newLastDate != _user!.lastDate;
-    
-    // Generate new QR code if lastDate changed
+
+    final identityChanged =
+        _userNameController.text != _user!.userName ||
+        _userIdController.text != _user!.userId ||
+        _emailController.text.trim() != _user!.email;
+
+    // Generate deterministic QR payload (will change if lastDate/identity changes)
     String newQrCode = _user!.qrCode;
-    if (lastDateChanged) {
-      newQrCode = QRService.generateUniqueQRCode();
+    if (lastDateChanged || identityChanged || _isNewUser) {
+      newQrCode = QRService.buildUserQrPayload(
+        userId: _userIdController.text,
+        userName: _userNameController.text,
+        email: _emailController.text.trim(),
+        lastDate: newLastDate,
+        createdAt: _user!.createdAt,
+      );
     }
 
     // Calculate remaining days based on current date vs last date
     final now = DateTime.now();
-    final calculatedRemainingDays = newLastDate.difference(now).inDays > 0 
-        ? newLastDate.difference(now).inDays 
+    final calculatedRemainingDays = newLastDate.difference(now).inDays > 0
+        ? newLastDate.difference(now).inDays
         : 0;
 
-    final updatedUser = _user!.copyWith(
+    UserModel updatedUser = _user!.copyWith(
       userName: _userNameController.text,
       userId: _userIdController.text,
+      email: _emailController.text.trim(),
       status: _statusController.text,
       lastPayment:
           DateTime.tryParse(_lastPaymentController.text) ?? _user!.lastPayment,
@@ -161,7 +212,31 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
 
     try {
       if (_isNewUser) {
-        await FirebaseService.createUser(updatedUser);
+        print('🔐 DEBUG: Creating auth user for email: ${updatedUser.email}');
+        print('🔐 DEBUG: Password length: ${_passwordController.text.length}');
+        
+        try {
+          final credential =
+              await FirebaseService.createAuthUserWithoutAffectingCurrentSession(
+                email: updatedUser.email,
+                password: _passwordController.text,
+              );
+
+          print('🔐 DEBUG: Auth result - UID: ${credential.user?.uid}, Error: ${credential.user?.uid == null ? "Failed" : "Success"}');
+
+          if (credential.user?.uid != null) {
+            updatedUser = updatedUser.copyWith(authUid: credential.user!.uid);
+            await FirebaseService.createUser(updatedUser);
+            print('✅ DEBUG: User saved to Firestore successfully');
+          } else {
+            throw Exception('Firebase Auth returned null user');
+          }
+        } catch (authError) {
+          print('❌ DEBUG: Auth creation failed: $authError');
+          // Still save to Firestore even if auth fails
+          await FirebaseService.createUser(updatedUser);
+          print('⚠️ DEBUG: User saved to Firestore without auth');
+        }
       } else {
         await FirebaseService.updateUser(updatedUser);
       }
@@ -271,6 +346,8 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
   void dispose() {
     _userNameController.dispose();
     _userIdController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     _statusController.dispose();
     _lastPaymentController.dispose();
     _remainingDaysController.dispose();
@@ -339,6 +416,7 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
                 title: 'QR Code',
                 qrCode: _user!.qrCode,
                 barcode: null,
+                showCodeText: false,
               ),
               const SizedBox(height: 10),
               Expanded(
@@ -399,8 +477,36 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
                                 ),
                               ),
                               const SizedBox(height: 16),
+                              TextField(
+                                controller: _emailController,
+                                keyboardType: TextInputType.emailAddress,
+                                style: const TextStyle(color: Colors.white),
+                                decoration: const InputDecoration(
+                                  labelText: 'Email',
+                                  prefixIcon: Icon(
+                                    Icons.email_rounded,
+                                    color: Color(0xFF6C63FF),
+                                  ),
+                                ),
+                              ),
+                              if (_isNewUser) ...[
+                                const SizedBox(height: 16),
+                                TextField(
+                                  controller: _passwordController,
+                                  obscureText: true,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: const InputDecoration(
+                                    labelText: 'Password',
+                                    prefixIcon: Icon(
+                                      Icons.lock_rounded,
+                                      color: Color(0xFF6C63FF),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                              const SizedBox(height: 16),
                               DropdownButtonFormField<String>(
-                                value: _statusController.text,
+                                initialValue: _statusController.text,
                                 decoration: const InputDecoration(
                                   labelText: 'Status',
                                   prefixIcon: Icon(
@@ -457,8 +563,13 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
                                   final selectedDate = DateTime.tryParse(value);
                                   if (selectedDate != null) {
                                     final now = DateTime.now();
-                                    final difference = selectedDate.difference(now).inDays;
-                                    _remainingDaysController.text = difference > 0 ? difference.toString() : '0';
+                                    final difference = selectedDate
+                                        .difference(now)
+                                        .inDays;
+                                    _remainingDaysController.text =
+                                        difference > 0
+                                        ? difference.toString()
+                                        : '0';
                                   }
                                 },
                               ),
@@ -545,11 +656,13 @@ class _CodeCard extends StatelessWidget {
   final String title;
   final String? qrCode;
   final String? barcode;
+  final bool showCodeText;
 
   const _CodeCard({
     required this.title,
     required this.qrCode,
     required this.barcode,
+    required this.showCodeText,
   });
 
   @override
@@ -606,16 +719,18 @@ class _CodeCard extends StatelessWidget {
                     color: Colors.black54,
                   ),
                 ),
-              const SizedBox(height: 16),
-              SelectableText(
-                qrCode ?? barcode ?? '',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.white.withOpacity(0.7),
-                  fontFamily: 'monospace',
+              if (showCodeText) ...[
+                const SizedBox(height: 16),
+                SelectableText(
+                  qrCode ?? barcode ?? '',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.white.withOpacity(0.7),
+                    fontFamily: 'monospace',
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
+              ],
             ],
           ),
         ),

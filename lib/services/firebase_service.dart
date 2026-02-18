@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import '../models/user_model.dart';
 
 class FirebaseService {
@@ -7,7 +8,10 @@ class FirebaseService {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // Authentication
-  static Future<UserCredential?> signInAdmin(String email, String password) async {
+  static Future<UserCredential?> signInAdmin(
+    String email,
+    String password,
+  ) async {
     try {
       UserCredential result = await _auth.signInWithEmailAndPassword(
         email: email,
@@ -26,6 +30,21 @@ class FirebaseService {
 
   static User? get currentUser => _auth.currentUser;
 
+  static Future<UserCredential?> signInUser(
+    String email,
+    String password,
+  ) async {
+    try {
+      return await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+    } catch (e) {
+      print('Error signing in user: $e');
+      return null;
+    }
+  }
+
   // User Management
   static Future<List<UserModel>> getAllUsers() async {
     try {
@@ -41,7 +60,10 @@ class FirebaseService {
 
   static Future<UserModel?> getUserById(String userId) async {
     try {
-      DocumentSnapshot doc = await _firestore.collection('users').doc(userId).get();
+      DocumentSnapshot doc = await _firestore
+          .collection('users')
+          .doc(userId)
+          .get();
       if (doc.exists) {
         return UserModel.fromMap(doc.data() as Map<String, dynamic>);
       }
@@ -55,9 +77,54 @@ class FirebaseService {
   static Future<void> createUser(UserModel user) async {
     try {
       await _firestore.collection('users').doc(user.id).set(user.toMap());
+      print('✅ Created user in Firestore: ${user.userName} (${user.email})');
     } catch (e) {
       print('Error creating user: $e');
-      throw e;
+      rethrow;
+    }
+  }
+
+  static Future<UserCredential> createAuthUserWithoutAffectingCurrentSession({
+    required String email,
+    required String password,
+  }) async {
+    print('🔐 DEBUG: Starting auth creation for: $email');
+    
+    final secondaryAppName = 'secondary-auth';
+    FirebaseApp? secondaryApp;
+    try {
+      try {
+        secondaryApp = Firebase.app(secondaryAppName);
+        print('🔐 DEBUG: Using existing secondary app');
+      } catch (_) {
+        secondaryApp = await Firebase.initializeApp(
+          name: secondaryAppName,
+          options: Firebase.app().options,
+        );
+        print('🔐 DEBUG: Created new secondary app');
+      }
+
+      final secondaryAuth = FirebaseAuth.instanceFor(app: secondaryApp);
+      final result = await secondaryAuth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      
+      print('🔐 DEBUG: Auth user created with UID: ${result.user?.uid}');
+      return result;
+    } catch (e) {
+      print('❌ DEBUG: Auth creation error: $e');
+      print('❌ DEBUG: Error type: ${e.runtimeType}');
+      rethrow;
+    } finally {
+      try {
+        if (secondaryApp != null) {
+          await secondaryApp.delete();
+          print('🔐 DEBUG: Secondary app deleted');
+        }
+      } catch (e) {
+        print('⚠️ DEBUG: Error deleting secondary app: $e');
+      }
     }
   }
 
@@ -66,7 +133,7 @@ class FirebaseService {
       await _firestore.collection('users').doc(user.id).update(user.toMap());
     } catch (e) {
       print('Error updating user: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -75,7 +142,7 @@ class FirebaseService {
       await _firestore.collection('users').doc(userId).delete();
     } catch (e) {
       print('Error deleting user: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -86,13 +153,51 @@ class FirebaseService {
           .where('qrCode', isEqualTo: qrCode)
           .limit(1)
           .get();
-      
+
       if (snapshot.docs.isNotEmpty) {
-        return UserModel.fromMap(snapshot.docs.first.data() as Map<String, dynamic>);
+        return UserModel.fromMap(
+          snapshot.docs.first.data() as Map<String, dynamic>,
+        );
       }
       return null;
     } catch (e) {
       print('Error getting user by QR code: $e');
+      return null;
+    }
+  }
+
+  static Future<UserModel?> getUserByAuthUid(String authUid) async {
+    try {
+      final snapshot = await _firestore
+          .collection('users')
+          .where('authUid', isEqualTo: authUid)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        return UserModel.fromMap(snapshot.docs.first.data());
+      }
+      return null;
+    } catch (e) {
+      print('Error getting user by auth uid: $e');
+      return null;
+    }
+  }
+
+  static Future<UserModel?> getUserByEmail(String email) async {
+    try {
+      final snapshot = await _firestore
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        return UserModel.fromMap(snapshot.docs.first.data());
+      }
+      return null;
+    } catch (e) {
+      print('Error getting user by email: $e');
       return null;
     }
   }
