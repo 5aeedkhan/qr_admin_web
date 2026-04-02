@@ -58,6 +58,86 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     }
   }
 
+  List<Widget> _buildSmallScreenCards() {
+    return [
+      _DashboardCard(
+        title: 'Total Users',
+        value: '$_totalUsers',
+        icon: Icons.people_rounded,
+        color: const Color(0xFF6C63FF),
+      ),
+      const SizedBox(height: 16),
+      _DashboardCard(
+        title: 'Active Users',
+        value: '$_activeUsers',
+        icon: Icons.check_circle_rounded,
+        color: const Color(0xFF00D4FF),
+      ),
+      const SizedBox(height: 16),
+      _DashboardCard(
+        title: 'Inactive Users',
+        value: '$_inactiveUsers',
+        icon: Icons.cancel_rounded,
+        color: const Color(0xFFFF6B9D),
+      ),
+      const SizedBox(height: 16),
+      _DashboardCard(
+        title: 'System Status',
+        value: 'Online',
+        icon: Icons.cloud_done_rounded,
+        color: const Color(0xFF00FF88),
+      ),
+    ];
+  }
+
+  List<Widget> _buildLargeScreenCards() {
+    return [
+      Row(
+        children: [
+          Expanded(
+            child: _DashboardCard(
+              title: 'Total Users',
+              value: '$_totalUsers',
+              icon: Icons.people_rounded,
+              color: const Color(0xFF6C63FF),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: _DashboardCard(
+              title: 'Active Users',
+              value: '$_activeUsers',
+              icon: Icons.check_circle_rounded,
+              color: const Color(0xFF00D4FF),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 16),
+      Row(
+        children: [
+          Expanded(
+            child: _DashboardCard(
+              title: 'Inactive Users',
+              value: '$_inactiveUsers',
+              icon: Icons.cancel_rounded,
+              color: const Color(0xFFFF6B9D),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: _DashboardCard(
+              title: 'System Status',
+              value: 'Online',
+              icon: Icons.cloud_done_rounded,
+              color: const Color(0xFF00FF88),
+            ),
+          ),
+        ],
+      ),
+    ];
+  }
+
   @override
   void dispose() {
     _fadeController.dispose();
@@ -97,7 +177,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               )
             : FadeTransition(
                 opacity: _fadeAnimation,
-                child: Padding(
+                child: SingleChildScrollView(
                   padding: const EdgeInsets.all(24.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -116,53 +196,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         'Manage your QR system efficiently',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withValues(alpha: 0.7),
                           letterSpacing: 0.5,
                         ),
                       ),
                       const SizedBox(height: 32),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _DashboardCard(
-                              title: 'Total Users',
-                              value: '$_totalUsers',
-                              icon: Icons.people_rounded,
-                              color: const Color(0xFF6C63FF),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _DashboardCard(
-                              title: 'Active Users',
-                              value: '$_activeUsers',
-                              icon: Icons.check_circle_rounded,
-                              color: const Color(0xFF00D4FF),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _DashboardCard(
-                              title: 'Inactive Users',
-                              value: '$_inactiveUsers',
-                              icon: Icons.cancel_rounded,
-                              color: const Color(0xFFFF6B9D),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _DashboardCard(
-                              title: 'System Status',
-                              value: 'Online',
-                              icon: Icons.cloud_done_rounded,
-                              color: const Color(0xFF00FF88),
-                            ),
-                          ),
-                        ],
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final isSmallScreen = constraints.maxWidth < 600;
+                          return Column(
+                            children: [
+                              if (isSmallScreen)
+                                ..._buildSmallScreenCards()
+                              else
+                                ..._buildLargeScreenCards(),
+                            ],
+                          );
+                        },
                       ),
                       const SizedBox(height: 32),
                       const Text(
@@ -175,24 +225,46 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                         ),
                       ),
                       const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _ActionButton(
-                              title: 'Manage Users',
-                              icon: Icons.manage_accounts_rounded,
-                              onTap: () => context.push('/users'),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _ActionButton(
-                              title: 'Add New User',
-                              icon: Icons.person_add_rounded,
-                              onTap: () => context.push('/user/new'),
-                            ),
-                          ),
-                        ],
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final isSmallScreen = constraints.maxWidth < 600;
+                          if (isSmallScreen) {
+                            return Column(
+                              children: [
+                                _ActionButton(
+                                  title: 'Manage Users',
+                                  icon: Icons.manage_accounts_rounded,
+                                  onTap: () => context.push('/users'),
+                                ),
+                                const SizedBox(height: 16),
+                                _ActionButton(
+                                  title: 'Add New User',
+                                  icon: Icons.person_add_rounded,
+                                  onTap: () => context.push('/user/new'),
+                                ),
+                              ],
+                            );
+                          }
+                          return Row(
+                            children: [
+                              Expanded(
+                                child: _ActionButton(
+                                  title: 'Manage Users',
+                                  icon: Icons.manage_accounts_rounded,
+                                  onTap: () => context.push('/users'),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _ActionButton(
+                                  title: 'Add New User',
+                                  icon: Icons.person_add_rounded,
+                                  onTap: () => context.push('/user/new'),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -225,10 +297,10 @@ class _DashboardCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               width: 1.5,
             ),
           ),
@@ -238,7 +310,7 @@ class _DashboardCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
+                  color: color.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: color, size: 24),
@@ -248,7 +320,7 @@ class _DashboardCard extends StatelessWidget {
                 title,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                   letterSpacing: 0.5,
                 ),
               ),
@@ -300,7 +372,7 @@ class _ActionButton extends StatelessWidget {
                 ),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: const Color(0xFF6C63FF).withOpacity(0.3),
+                  color: const Color(0xFF6C63FF).withValues(alpha: 0.3),
                   width: 1.5,
                 ),
               ),

@@ -167,7 +167,9 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
         }
         return;
       }
-      print('🔐 DEBUG: Creating new user with email: ${_emailController.text.trim()}');
+      print(
+        '🔐 DEBUG: Creating new user with email: ${_emailController.text.trim()}',
+      );
     }
 
     // Check if lastDate has changed
@@ -214,7 +216,7 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
       if (_isNewUser) {
         print('🔐 DEBUG: Creating auth user for email: ${updatedUser.email}');
         print('🔐 DEBUG: Password length: ${_passwordController.text.length}');
-        
+
         try {
           final credential =
               await FirebaseService.createAuthUserWithoutAffectingCurrentSession(
@@ -222,7 +224,9 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
                 password: _passwordController.text,
               );
 
-          print('🔐 DEBUG: Auth result - UID: ${credential.user?.uid}, Error: ${credential.user?.uid == null ? "Failed" : "Success"}');
+          print(
+            '🔐 DEBUG: Auth result - UID: ${credential.user?.uid}, Error: ${credential.user?.uid == null ? "Failed" : "Success"}',
+          );
 
           if (credential.user?.uid != null) {
             updatedUser = updatedUser.copyWith(authUid: credential.user!.uid);
@@ -271,6 +275,176 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
         );
       }
     }
+  }
+
+  List<Widget> _buildFormFields() {
+    return [
+      const Text(
+        'User Information',
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+          letterSpacing: 1,
+        ),
+      ),
+      const SizedBox(height: 20),
+      TextField(
+        controller: _userNameController,
+        style: const TextStyle(color: Colors.white),
+        decoration: const InputDecoration(
+          labelText: 'User Name',
+          prefixIcon: Icon(
+            Icons.person_rounded,
+            color: Color(0xFF6C63FF),
+          ),
+        ),
+      ),
+      const SizedBox(height: 16),
+      TextField(
+        controller: _userIdController,
+        style: const TextStyle(color: Colors.white),
+        decoration: const InputDecoration(
+          labelText: 'User ID',
+          prefixIcon: Icon(
+            Icons.badge_rounded,
+            color: Color(0xFF6C63FF),
+          ),
+        ),
+      ),
+      const SizedBox(height: 16),
+      TextField(
+        controller: _emailController,
+        keyboardType: TextInputType.emailAddress,
+        style: const TextStyle(color: Colors.white),
+        decoration: const InputDecoration(
+          labelText: 'Email',
+          prefixIcon: Icon(
+            Icons.email_rounded,
+            color: Color(0xFF6C63FF),
+          ),
+        ),
+      ),
+      if (_isNewUser) ...[
+        const SizedBox(height: 16),
+        TextField(
+          controller: _passwordController,
+          obscureText: true,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            labelText: 'Password',
+            prefixIcon: Icon(
+              Icons.lock_rounded,
+              color: Color(0xFF6C63FF),
+            ),
+          ),
+        ),
+      ],
+      const SizedBox(height: 16),
+      DropdownButtonFormField<String>(
+        value: _statusController.text,
+        decoration: const InputDecoration(
+          labelText: 'Status',
+          prefixIcon: Icon(
+            Icons.verified_user_rounded,
+            color: Color(0xFF6C63FF),
+          ),
+        ),
+        dropdownColor: const Color(0xFF1A1A2E),
+        style: const TextStyle(color: Colors.white),
+        items: ['active', 'inactive'].map((status) {
+          return DropdownMenuItem(
+            value: status,
+            child: Text(
+              status.toUpperCase(),
+              style: const TextStyle(
+                color: Colors.white,
+              ),
+            ),
+          );
+        }).toList(),
+        onChanged: (value) {
+          setState(() {
+            _statusController.text = value!;
+          });
+        },
+      ),
+      const SizedBox(height: 16),
+      TextField(
+        controller: _lastPaymentController,
+        keyboardType: TextInputType.datetime,
+        style: const TextStyle(color: Colors.white),
+        decoration: const InputDecoration(
+          labelText: 'Last Payment (YYYY-MM-DD)',
+          prefixIcon: Icon(
+            Icons.payments_rounded,
+            color: Color(0xFF6C63FF),
+          ),
+        ),
+      ),
+      const SizedBox(height: 16),
+      TextField(
+        controller: _lastDateController,
+        keyboardType: TextInputType.datetime,
+        style: const TextStyle(color: Colors.white),
+        decoration: const InputDecoration(
+          labelText: 'Last Date (YYYY-MM-DD)',
+          prefixIcon: Icon(
+            Icons.calendar_today_rounded,
+            color: Color(0xFF6C63FF),
+          ),
+        ),
+        onChanged: (value) {
+          final selectedDate = DateTime.tryParse(value);
+          if (selectedDate != null) {
+            final now = DateTime.now();
+            final difference = selectedDate.difference(now).inDays;
+            _remainingDaysController.text =
+                difference > 0 ? difference.toString() : '0';
+          }
+        },
+      ),
+      const SizedBox(height: 16),
+      TextField(
+        controller: _remainingDaysController,
+        keyboardType: TextInputType.number,
+        readOnly: true,
+        style: const TextStyle(color: Colors.white70),
+        decoration: const InputDecoration(
+          labelText: 'Remaining Days (Auto-calculated)',
+          prefixIcon: Icon(
+            Icons.schedule_rounded,
+            color: Color(0xFF6C63FF),
+          ),
+        ),
+      ),
+      const SizedBox(height: 24),
+      Row(
+        children: [
+          Expanded(
+            child: ElevatedButton(
+              onPressed: _saveUser,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6C63FF),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: Text(
+                _isNewUser ? 'Create User' : 'Save Changes',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ];
   }
 
   Future<void> _deleteUser() async {
@@ -407,245 +581,96 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
             colors: [Color(0xFF0F0F1E), Color(0xFF1A1A2E), Color(0xFF2A2A3E)],
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _CodeCard(
-                title: 'QR Code',
-                qrCode: _user!.qrCode,
-                barcode: null,
-                showCodeText: false,
-              ),
-              const SizedBox(height: 10),
-              Expanded(
-                child: Scrollbar(
-                  controller: _formScrollController,
-                  thumbVisibility: true,
-                  child: SingleChildScrollView(
-                    controller: _formScrollController,
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(24),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                        child: Container(
-                          padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.1),
-                              width: 1.5,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isSmallScreen = constraints.maxWidth < 900;
+            return Scrollbar(
+              controller: _formScrollController,
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                controller: _formScrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.all(isSmallScreen ? 16.0 : 24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (isSmallScreen)
+                      _CodeCard(
+                        title: 'QR Code',
+                        qrCode: _user!.qrCode,
+                        barcode: null,
+                        showCodeText: false,
+                      )
+                    else
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: _CodeCard(
+                              title: 'QR Code',
+                              qrCode: _user!.qrCode,
+                              barcode: null,
+                              showCodeText: false,
                             ),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'User Information',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  letterSpacing: 1,
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              TextField(
-                                controller: _userNameController,
-                                style: const TextStyle(color: Colors.white),
-                                decoration: const InputDecoration(
-                                  labelText: 'User Name',
-                                  prefixIcon: Icon(
-                                    Icons.person_rounded,
-                                    color: Color(0xFF6C63FF),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              TextField(
-                                controller: _userIdController,
-                                style: const TextStyle(color: Colors.white),
-                                decoration: const InputDecoration(
-                                  labelText: 'User ID',
-                                  prefixIcon: Icon(
-                                    Icons.badge_rounded,
-                                    color: Color(0xFF6C63FF),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              TextField(
-                                controller: _emailController,
-                                keyboardType: TextInputType.emailAddress,
-                                style: const TextStyle(color: Colors.white),
-                                decoration: const InputDecoration(
-                                  labelText: 'Email',
-                                  prefixIcon: Icon(
-                                    Icons.email_rounded,
-                                    color: Color(0xFF6C63FF),
-                                  ),
-                                ),
-                              ),
-                              if (_isNewUser) ...[
-                                const SizedBox(height: 16),
-                                TextField(
-                                  controller: _passwordController,
-                                  obscureText: true,
-                                  style: const TextStyle(color: Colors.white),
-                                  decoration: const InputDecoration(
-                                    labelText: 'Password',
-                                    prefixIcon: Icon(
-                                      Icons.lock_rounded,
-                                      color: Color(0xFF6C63FF),
+                          const SizedBox(width: 24),
+                          Expanded(
+                            flex: 2,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(24),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                child: Container(
+                                  padding: const EdgeInsets.all(24),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.05),
+                                    borderRadius: BorderRadius.circular(24),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.1),
+                                      width: 1.5,
                                     ),
                                   ),
-                                ),
-                              ],
-                              const SizedBox(height: 16),
-                              DropdownButtonFormField<String>(
-                                initialValue: _statusController.text,
-                                decoration: const InputDecoration(
-                                  labelText: 'Status',
-                                  prefixIcon: Icon(
-                                    Icons.verified_user_rounded,
-                                    color: Color(0xFF6C63FF),
-                                  ),
-                                ),
-                                dropdownColor: const Color(0xFF1A1A2E),
-                                style: const TextStyle(color: Colors.white),
-                                items: ['active', 'inactive'].map((status) {
-                                  return DropdownMenuItem(
-                                    value: status,
-                                    child: Text(
-                                      status.toUpperCase(),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                                onChanged: (value) {
-                                  setState(() {
-                                    _statusController.text = value!;
-                                  });
-                                },
-                              ),
-                              const SizedBox(height: 16),
-                              TextField(
-                                controller: _lastPaymentController,
-                                keyboardType: TextInputType.datetime,
-                                style: const TextStyle(color: Colors.white),
-                                decoration: const InputDecoration(
-                                  labelText: 'Last Payment (YYYY-MM-DD)',
-                                  prefixIcon: Icon(
-                                    Icons.payments_rounded,
-                                    color: Color(0xFF6C63FF),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: _buildFormFields(),
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 16),
-                              TextField(
-                                controller: _lastDateController,
-                                keyboardType: TextInputType.datetime,
-                                style: const TextStyle(color: Colors.white),
-                                decoration: const InputDecoration(
-                                  labelText: 'Last Date (YYYY-MM-DD)',
-                                  prefixIcon: Icon(
-                                    Icons.calendar_today_rounded,
-                                    color: Color(0xFF6C63FF),
-                                  ),
-                                ),
-                                onChanged: (value) {
-                                  // When last date changes, calculate remaining days automatically
-                                  final selectedDate = DateTime.tryParse(value);
-                                  if (selectedDate != null) {
-                                    final now = DateTime.now();
-                                    final difference = selectedDate
-                                        .difference(now)
-                                        .inDays;
-                                    _remainingDaysController.text =
-                                        difference > 0
-                                        ? difference.toString()
-                                        : '0';
-                                  }
-                                },
+                            ),
+                          ),
+                        ],
+                      ),
+                    if (isSmallScreen) ...[
+                      const SizedBox(height: 16),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(24),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                          child: Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.1),
+                                width: 1.5,
                               ),
-                              const SizedBox(height: 16),
-                              TextField(
-                                controller: _remainingDaysController,
-                                keyboardType: TextInputType.number,
-                                readOnly: true,
-                                style: const TextStyle(color: Colors.white70),
-                                decoration: const InputDecoration(
-                                  labelText: 'Remaining Days (Auto-calculated)',
-                                  prefixIcon: Icon(
-                                    Icons.schedule_rounded,
-                                    color: Color(0xFF6C63FF),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: ElevatedButton(
-                                      onPressed: _saveUser,
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(
-                                          0xFF6C63FF,
-                                        ),
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 16,
-                                        ),
-                                      ),
-                                      child: const Text(
-                                        'Save Changes',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: ElevatedButton(
-                                      onPressed: () => context.go('/dashboard'),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.white
-                                            .withOpacity(0.1),
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 16,
-                                        ),
-                                      ),
-                                      child: const Text(
-                                        'Back',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: _buildFormFields(),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
+                    ],
+                    const SizedBox(height: 24),
+                  ],
                 ),
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -674,10 +699,10 @@ class _CodeCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               width: 1.5,
             ),
           ),
@@ -725,7 +750,7 @@ class _CodeCard extends StatelessWidget {
                   qrCode ?? barcode ?? '',
                   style: TextStyle(
                     fontSize: 10,
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     fontFamily: 'monospace',
                   ),
                   textAlign: TextAlign.center,

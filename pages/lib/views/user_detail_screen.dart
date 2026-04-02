@@ -167,7 +167,9 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
         }
         return;
       }
-      print('🔐 DEBUG: Creating new user with email: ${_emailController.text.trim()}');
+      print(
+        '🔐 DEBUG: Creating new user with email: ${_emailController.text.trim()}',
+      );
     }
 
     // Check if lastDate has changed
@@ -214,7 +216,7 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
       if (_isNewUser) {
         print('🔐 DEBUG: Creating auth user for email: ${updatedUser.email}');
         print('🔐 DEBUG: Password length: ${_passwordController.text.length}');
-        
+
         try {
           final credential =
               await FirebaseService.createAuthUserWithoutAffectingCurrentSession(
@@ -222,7 +224,9 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
                 password: _passwordController.text,
               );
 
-          print('🔐 DEBUG: Auth result - UID: ${credential.user?.uid}, Error: ${credential.user?.uid == null ? "Failed" : "Success"}');
+          print(
+            '🔐 DEBUG: Auth result - UID: ${credential.user?.uid}, Error: ${credential.user?.uid == null ? "Failed" : "Success"}',
+          );
 
           if (credential.user?.uid != null) {
             updatedUser = updatedUser.copyWith(authUid: credential.user!.uid);
@@ -433,10 +437,10 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
                         child: Container(
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.05),
+                            color: Colors.white.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(24),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.1),
+                              color: Colors.white.withValues(alpha: 0.1),
                               width: 1.5,
                             ),
                           ),
@@ -618,7 +622,7 @@ class _UserDetailScreenState extends ConsumerState<UserDetailScreen>
                                       onPressed: () => context.go('/dashboard'),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.white
-                                            .withOpacity(0.1),
+                                            .withValues(alpha: 0.1),
                                         foregroundColor: Colors.white,
                                         padding: const EdgeInsets.symmetric(
                                           vertical: 16,
@@ -674,10 +678,10 @@ class _CodeCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               width: 1.5,
             ),
           ),
@@ -725,7 +729,7 @@ class _CodeCard extends StatelessWidget {
                   qrCode ?? barcode ?? '',
                   style: TextStyle(
                     fontSize: 10,
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     fontFamily: 'monospace',
                   ),
                   textAlign: TextAlign.center,

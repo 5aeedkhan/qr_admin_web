@@ -97,11 +97,7 @@ class _UserPortalScreenState extends State<UserPortalScreen>
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0F0F1E),
-              Color(0xFF1A1A2E),
-              Color(0xFF2A2A3E),
-            ],
+            colors: [Color(0xFF0F0F1E), Color(0xFF1A1A2E), Color(0xFF2A2A3E)],
           ),
         ),
         child: _isLoading
@@ -125,10 +121,10 @@ class _UserPortalScreenState extends State<UserPortalScreen>
                           child: Container(
                             padding: const EdgeInsets.all(24.0),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.05),
+                              color: Colors.white.withValues(alpha: 0.05),
                               borderRadius: BorderRadius.circular(24),
                               border: Border.all(
-                                color: Colors.white.withOpacity(0.1),
+                                color: Colors.white.withValues(alpha: 0.1),
                                 width: 1.5,
                               ),
                             ),
@@ -139,13 +135,17 @@ class _UserPortalScreenState extends State<UserPortalScreen>
                                       Icon(
                                         Icons.person_off_rounded,
                                         size: 80,
-                                        color: Colors.white.withOpacity(0.5),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.5,
+                                        ),
                                       ),
                                       const SizedBox(height: 16),
                                       Text(
                                         'No user profile found for this account.',
                                         style: TextStyle(
-                                          color: Colors.white.withOpacity(0.8),
+                                          color: Colors.white.withValues(
+                                            alpha: 0.8,
+                                          ),
                                           fontSize: 16,
                                         ),
                                         textAlign: TextAlign.center,
@@ -171,7 +171,9 @@ class _UserPortalScreenState extends State<UserPortalScreen>
                                         _user!.email,
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.white.withOpacity(0.7),
+                                          color: Colors.white.withValues(
+                                            alpha: 0.7,
+                                          ),
                                         ),
                                       ),
                                       const SizedBox(height: 20),
@@ -179,8 +181,9 @@ class _UserPortalScreenState extends State<UserPortalScreen>
                                         padding: const EdgeInsets.all(16),
                                         decoration: BoxDecoration(
                                           color: Colors.white,
-                                          borderRadius:
-                                              BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                         ),
                                         child: QrImageView(
                                           data: _user!.qrCode,
@@ -193,7 +196,9 @@ class _UserPortalScreenState extends State<UserPortalScreen>
                                         'Status: ${_user!.status}',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.white.withOpacity(0.7),
+                                          color: Colors.white.withValues(
+                                            alpha: 0.7,
+                                          ),
                                         ),
                                       ),
                                     ],

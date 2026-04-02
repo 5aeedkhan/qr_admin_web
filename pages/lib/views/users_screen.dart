@@ -107,13 +107,15 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     hintText: 'Search users...',
-                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                    hintStyle: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                    ),
                     prefixIcon: const Icon(
                       Icons.search_rounded,
                       color: Color(0xFF6C63FF),
                     ),
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.1),
+                    fillColor: Colors.white.withValues(alpha: 0.1),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none,
@@ -151,14 +153,14 @@ class _UsersScreenState extends ConsumerState<UsersScreen>
                             Icon(
                               Icons.person_off_rounded,
                               size: 80,
-                              color: Colors.white.withOpacity(0.5),
+                              color: Colors.white.withValues(alpha: 0.5),
                             ),
                             const SizedBox(height: 16),
                             Text(
                               'No users found',
                               style: TextStyle(
                                 fontSize: 18,
-                                color: Colors.white.withOpacity(0.7),
+                                color: Colors.white.withValues(alpha: 0.7),
                                 letterSpacing: 0.5,
                               ),
                             ),
@@ -214,10 +216,10 @@ class _UserCard extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
+                  color: Colors.white.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                     width: 1.5,
                   ),
                 ),
@@ -227,8 +229,8 @@ class _UserCard extends StatelessWidget {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: isActive
-                            ? const Color(0xFF00D4FF).withOpacity(0.2)
-                            : const Color(0xFFFF6B9D).withOpacity(0.2),
+                            ? const Color(0xFF00D4FF).withValues(alpha: 0.2)
+                            : const Color(0xFFFF6B9D).withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -260,7 +262,7 @@ class _UserCard extends StatelessWidget {
                             'ID: ${user.userId}',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.white.withOpacity(0.7),
+                              color: Colors.white.withValues(alpha: 0.7),
                               letterSpacing: 0.3,
                             ),
                           ),
@@ -270,7 +272,7 @@ class _UserCard extends StatelessWidget {
                               Icon(
                                 Icons.access_time_rounded,
                                 size: 14,
-                                color: Colors.white.withOpacity(0.5),
+                                color: Colors.white.withValues(alpha: 0.5),
                               ),
                               const SizedBox(width: 4),
                               Text(
@@ -294,7 +296,7 @@ class _UserCard extends StatelessWidget {
                     ),
                     Icon(
                       Icons.chevron_right_rounded,
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                       size: 24,
                     ),
                   ],
